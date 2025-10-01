@@ -4,18 +4,23 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { deleteNote } from "@/lib/api";
-import { Note } from "@/types/note";
+import type { Note } from "@/types/note";
 import css from "./NoteList.module.css";
 
-export default function NoteList({ notes }: { notes: Note[] }) {
+export interface NoteListProps {
+  notes: Note[];
+}
+
+const NoteList: React.FC<NoteListProps> = ({ notes }) => {
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteNote(id),
+  const deleteMut = useMutation<Note, Error, string>({
+    mutationFn: (id) => deleteNote(id),
     onMutate: (id) => setDeletingId(id),
-    onSettled: () => setDeletingId(null),
-    onSuccess: () => {
+    onError: () => setDeletingId(null),
+    onSettled: () => {
+      setDeletingId(null);
       queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
   });
@@ -30,9 +35,10 @@ export default function NoteList({ notes }: { notes: Note[] }) {
         <li key={note.id} className={css.listItem}>
           <h2 className={css.title}>{note.title}</h2>
           <p className={css.content}>{note.content ?? ""}</p>
+
           <div className={css.footer}>
             <span className={css.tag}>{note.tag}</span>
-            
+
             <Link href={`/notes/${note.id}`} className={css.link}>
               View details
             </Link>
@@ -41,6 +47,7 @@ export default function NoteList({ notes }: { notes: Note[] }) {
               className={css.button}
               onClick={() => deleteMut.mutate(note.id)}
               disabled={deletingId === note.id}
+              aria-label={`Delete note ${note.title}`}
             >
               {deletingId === note.id ? "Deleting..." : "Delete"}
             </button>
@@ -49,4 +56,6 @@ export default function NoteList({ notes }: { notes: Note[] }) {
       ))}
     </ul>
   );
-}
+};
+
+export default NoteList;

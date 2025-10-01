@@ -20,12 +20,33 @@ export default function Modal({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    document.body.style.overflow = "hidden"; 
+
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+      document.body.style.overflow = ""; 
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return mounted
     ? createPortal(
         <div className={css.backdrop} onClick={onClose}>
-          <div className={css.modal} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={css.modal}
+            onClick={(e) => e.stopPropagation()} 
+          >
             {children}
           </div>
         </div>,
@@ -33,3 +54,7 @@ export default function Modal({
       )
     : null;
 }
+
+
+
+
